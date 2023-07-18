@@ -78,7 +78,6 @@ app.get('/updates',(req,res)=>{
         const eventData = {
             // studentID: "Miki",
             // studentName: "MIki",
-
             // array : [{name:"Abe",school:"AAiT"},{name:"Kide",school:"Work"}]
             array : vehicles
         };
@@ -141,7 +140,6 @@ app.get('/',(req,res)=>{
         return res.send(data)
     })
 
-    // res.send({"name":"Kidus Gebru "});
 })
 
 app.post('/signIn',async (req, res) => {
@@ -184,7 +182,7 @@ app.post('/signUp',async (req,res)=>{
     else{
         console.log("I am going to create User")
          const newUser = await Users.create({name:name,password:password})
-        return res.send(newUser)
+        return res.send({newUser})
     }
 
 })
@@ -259,11 +257,67 @@ app.get('/theft', async (req,res)=>{
 
 app.post('/history',async (req,res)=>{
     const {VehicleId} = req.body;
-    console.log("THe vehicle Id is "+VehicleId)
-    const allHistory = await HistoryPath.find()
-    const history = await HistoryPath.findOne({vehicleId:VehicleId})
-    console.log("This is the history "+history);
-    console.log("THis is the all history"+allHistory)
+    // console.log("THe vehicle Id is "+VehicleId)
+    // const allHistory = await HistoryPath.find()
+    var history = await HistoryPath.findOne({vehicleId:VehicleId})
+    if (history == null){
+        history = await HistoryPath.create({vehicleId:VehicleId,locations:[]})
+    }
+    // console.log("This is the history "+history);
+    // console.log("THis is the all history"+allHistory)
+    console.log("This is the history" + history)
     res.send(history)
 })
 
+app.post('/check', async(req,res)=>{
+    console.log("Check endpoint is called");
+    const {id,lat,lng} = req.body;
+    console.log("THe latitutde ",lat," and the longtitude is ",lng)
+    const vehicle = await Vehicles.findOne({_id:id});
+    if (lat != 0 && lng != 0){
+        await Vehicles.findOneAndUpdate({_id:id},{CurrentLocation:{type:"Point",coordinates:[0,0]}})
+    }
+    console.log("THe value of the Engine is ",vehicle["Engine"])
+    res.send({Engine:vehicle["Engine"]})
+
+
+})
+
+app.post('/addVehicle', async (req,res)=>{
+    const {Owner,Engine,PlateNumber} = req.body;
+
+    const vehicle = await Vehicles.findOne({PlateNumber:PlateNumber});
+    if (vehicle){
+        return res.send({error:"Plate Number already exists"});
+    }
+    else{
+        await Vehicles.create({PlateNumber:PlateNumber,Owner:Owner,GeoFence:[{lat:0.0,lng:0.0},{lat:0.0,lng:0.0},{lat:0.0,lng:0.0}],Engine:Engine,CurrentLocation:{type:"Point",coordinates:[0.0,0.0]}})
+        return res.send({msg:"complete"});
+    }
+})
+
+app.post('/changePassword', async(req,res)=>{
+    const {oldPassword, newPassword,id} = req.body;
+
+    const user = await Users.findOne({_id:id});
+    if (user["password"] !== oldPassword){
+        return res.send({error: "Incorrect Password"})
+    }
+    else{
+        await Users.findOneAndUpdate({_id:id},{password:newPassword})
+        return res.send({msg:"Compeleted"})
+    }
+})
+
+app.post('/updatePosition',async(req,res)=>{
+    console.log("I am in updateLocation")
+    const {lat,lng} = req.body;
+    console.log(lat,lng)
+    await Vehicles.findOneAndUpdate({_id:"647db9a8b02f0d37e4d64a85"}, {CurrentLocation:{type:"Point",coordinates:[lat,lng]}})
+    const history = await HistoryPath.findOne({vehicleId:"647db9a8b02f0d37e4d64a85"})
+    console.log(history["locations"])
+    history["locations"].push({lat:lat,lng:lng})
+    await HistoryPath.findOneAndUpdate({vehicleId:"647db9a8b02f0d37e4d64a85"},{locations:history["locations"]})
+    res.send({msg:"Successfully Updated The Location"})
+
+})

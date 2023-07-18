@@ -31,7 +31,8 @@ const vehicleSchema = new Schema({
         },
         coordinates: {
             type: [Number],
-            required: true
+            required: true,
+
         }
     },
     PlateNumber: {

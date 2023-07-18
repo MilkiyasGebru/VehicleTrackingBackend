@@ -14,7 +14,19 @@ const userSchema = new Schema({
 
         type : String,
         required: true
-    }
+    },
+
+    // phonenumber : {
+    //     type: String,
+    //     default : "No number given",
+    //
+    // },
+    //
+    // email : {
+    //     type : String,
+    //     default: "No Email has been given"
+    // }
+
 
 
 },{timestamps:true})
